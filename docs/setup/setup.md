@@ -82,7 +82,7 @@ configuration__main:
   - key: '0-core-version'
     value: '1.1.0-alpha-4'
   - key: 'js-version'
-    value: '9.0.0'
+    value: '9.0.3'
   - key: 'gw-flist'
     value: 'https://hub.gig.tech/gig-official-apps/zero-os-gw-1.1.0-alpha-3.flist'
   - key: 'ovs-flist'
