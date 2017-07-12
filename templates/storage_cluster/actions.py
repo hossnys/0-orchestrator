@@ -31,6 +31,7 @@ def get_cluster(job):
 
 
 def init(job):
+    from zeroos.orchestrator.configuration import get_jwt_token
     from zeroos.orchestrator.configuration import get_configuration
     from zeroos.orchestrator.sal.Node import Node
 
@@ -124,6 +125,7 @@ def init(job):
     grafanasrv = service.aysrepo.serviceGet(role='grafana', instance='statsdb', die=False)
     if grafanasrv:
         dashboard_actor = service.aysrepo.actorGet('dashboard')
+        job.context['token'] = get_jwt_token(service.aysrepo)
         cluster = get_cluster(job)
         board = cluster.dashboard
         args = {
