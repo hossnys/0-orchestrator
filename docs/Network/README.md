@@ -1,26 +1,24 @@
-### Prepare GateWay to be able to connect remote VXLANs with each other
-
-#### Funcionality
+# Prepare Gateway to be able to connect remote VXLANs with each other
 
 How this will work :
-  1. create a zerotier network, but without!! allocated route or ip addresses
-  1. have a running gateway with a pub interface and a leg on the vxlan (PRIV)
-  1. create (maybe foresee it by default) a (linux) bridge inthe GW, and attach the PRIV interface to it
-  1. migrate the ip of the PRIV interface to the bridge, and bring the bridge up
-  1. start zerotier-one, join network id
-  1. configure the zerotier interface to have config/bridge=true  
+  1. Create a ZeroTier network, but without!! allocated route or IP addresses
+  1. Have a running Gateway with a public interface and a leg on the VXLAN (PRIV)
+  1. Create (maybe foresee it by default) a (Linux) bridge in the Gateway, and attach the PRIV interface to it
+  1. Migrate the IP of the PRIV interface to the bridge, and bring the bridge up
+  1. Start zerotier-one, join network id
+  1. Configure the ZeroTier interface to have config/bridge=true  
   [Specified here](https://github.com/zero-os/zerotier_client/blob/master/api.raml#L359)
-  1. attach zt0 to the bridge
+  1. Attach zt0 to the bridge
 
 Implementation
 
-  - Create zerotier
-  ![just create it, give it a name](Create_zerotier.png)
+  - Create ZeroTier
+  ![just create it, give it a name](images/Create_zerotier.png)
 
 
-in a Zero-GW:
+In a Zero-GW:
 
-```
+```bash
 #!/bin/bash
 ZTID=a09acf0233eb77aa
 PUB=eth0
@@ -31,10 +29,10 @@ zerotier-cli join ${ZTID}
 # go back to your zerotier-page and set bridge of new client to on (without IP)
 ```
 
-![Enable Bridge mode](Enable_bridge.png)
+![Enable Bridge mode](images/Enable_bridge.png)
 
 
-```
+```bash
 #!/bin/bash
 ZTID=a09acf0233eb77aa
 PUB=eth0
@@ -52,4 +50,4 @@ ip link set ztbr up
 
 ```
 
-Now do the same on the other side, but use another range of IP, like 172.29.2.1/16
+Now do the same on the other side, but use another range of IP, like 172.29.2.1/16.
