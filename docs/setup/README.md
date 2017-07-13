@@ -59,7 +59,7 @@ export ZEROTIERTOKEN="<Your ZeroTier token>"
 export ITSYOUONLINEORG="<itsyou.online organization>"
 export DOMAIN="<Your domain name>"
 curl -o install-orchestrator.sh https://raw.githubusercontent.com/zero-os/0-orchestrator/${BRANCH}/scripts/install-orchestrator.sh
-bash install-orchestrator.sh "$BRANCH" "$ZEROTIERNWID" "$ZEROTIERTOKEN" "$ITSYOUONLINEORG" \["$DOMAIN" \[--development]]
+bash install-orchestrator.sh "$BRANCH" "$ZEROTIERNWID" "$ZEROTIERTOKEN" "$ITSYOUONLINEORG" ["$DOMAIN" [--development]]
 ```
 
 In order to see the full log details while `install-orchestrator.sh` executes:
@@ -96,7 +96,7 @@ Since AYS is protected with a JWT, you have to generate a JWT token so the AYS c
 The AYS command line tool provides and easy way to do it:
 
 ```shell
-ays generatetoken --clientid {CLIENT_ID} --clientsecret {CLIENT_SECRET} --organization $ITSYOUONLINEORG
+ays generatetoken --clientid {CLIENT_ID} --clientsecret {CLIENT_SECRET} --organization $ITSYOUONLINEORG --validity 3600
 ```
 
 `CLIENT_ID` AND `CLIENT_SECRET` have to be generated on [ItsYou.online](https://itsyou.online), as discused above.
