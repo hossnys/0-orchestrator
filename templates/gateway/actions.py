@@ -68,6 +68,7 @@ def init(job):
         'nics': nics,
         'hostname': service.model.data.hostname,
         'hostNetworking': False,
+        "privileged": True
     }
     cont_service = containeractor.serviceCreate(instance=service.name, args=args)
     service.consume(cont_service)
