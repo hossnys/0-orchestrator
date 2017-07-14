@@ -58,5 +58,5 @@ See [../../raml/api.html#nodes_nodeid_gws_gwname_dhcp_interface_hosts_post](http
 
 
 ## V(x)LAN to V(x)LAN bridge
-Probably the coolest feature of the Gateway is this function. It allows to connect V(X)LANs in remote sites into one logical L2 network using a specially configured ZeroTier network. See [Prepare Gateway to be able to connect remote VXLANs with each other](network/README.md) for detailed information on how to configure the ZeroTier network.
+Probably the coolest feature of the Gateway is this function. It allows to connect V(X)LANs in remote sites into one logical L2 network using a specially configured ZeroTier network. See [Prepare Gateway to Bridge Remote VXLANs](network/README.md) for detailed information on how to configure the ZeroTier network.
 The bridge can be configured by setting the `zerotierbridge` property of the V(X)LAN interface of the Gateway. For more information how to create the bridge, see [../../raml/api.html#nodes_nodeid_gws_post](https://htmlpreviewer.github.io/?../../raml/api.html#nodes__nodeid__gws_post)
