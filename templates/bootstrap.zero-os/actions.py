@@ -15,7 +15,6 @@ def bootstrap(job):
     service = job.service
     token = service.model.data.zerotierToken
     netid = service.model.data.zerotierNetID
-    
     zerotier = client.Client()
     zerotier.set_auth_header('bearer {}'.format(token))
 
@@ -83,21 +82,12 @@ def try_authorize(job, logger, netid, member, zerotier):
         member = resp.json()
     zerotier_ip = member['config']['ipAssignments'][0]
 
-    # execute hardwarecheck if necessary
-    hwc_producers=service.producers.get('hardwarecheck')
-    if hwc_producers != None:
-        logger.info("Hardware check necessary")
-        hwcheck_job=hwc_producers[0].getJob('check', args={'ipaddr': zerotier_ip,
-                                                       'node_id': member['nodeId'],
-                                                       'jwt': get_jwt_token(service.aysrepo)})
+    # do hardwarechecks
+    for prod in service.producers.get('hardwarecheck', []):
+        hwcheck_job=prod.getJob('check', args={'ipaddr': zerotier_ip,
+                                               'node_id': member['nodeId'],
+                                               'jwt': get_jwt_token(service.aysrepo)})
         j.tools.async.wrappers.sync(hwcheck_job.execute())
-
-    # execute odoo registration if necessary
-    odoo_producers=service.producers.get('odooregistration')
-    if odoo_producers != None:
-        logger.info("Odoo registration necessary")
-        odoo_job=odoo_producers[0].getJob('register', args={'node_id': member['nodeId']})
-        j.tools.async.wrappers.sync(odoo_job.execute())
 
     # test if we can connect to the new member
     node = Node(zerotier_ip, password=get_jwt_token(service.aysrepo))
@@ -148,6 +138,11 @@ def try_authorize(job, logger, netid, member, zerotier):
         except:
             j.tools.async.wrappers.sync(nodeservice.delete())
             raise
+
+    # do ERP registrations
+    for prod in service.producers.get('erp_registration', []):
+        erp_job=prod.getJob('register', args={'node_id': member['nodeId']})
+        j.tools.async.wrappers.sync(erp_job.execute())
 
 
 def processChange(job):
