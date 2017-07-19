@@ -1,11 +1,14 @@
 
-branch = $1
-zerotierid = $2
-zerotiertoken = $3
+branch=$1
+johnzt = $2
+zerotierid=17d709436c63c33f
+zerotiertoken=$3
 itsyouonlineorg=$ITSYOUONLINE_ORG
 
-echo zerotierid
-echo $zerotierid
+echo "johnzt="$johnzt
+echo "branch="$zerotiertoken
+echo "zerotierid="$zerotierid
+echo "zerotiertoken="$zerotiertoken
 
 export SSHKEYNAME=id_rsa
 export GIGBRANCH=master
