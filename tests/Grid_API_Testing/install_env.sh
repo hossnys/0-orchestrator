@@ -4,6 +4,9 @@ zerotierid = $2
 zerotiertoken = $3
 itsyouonlineorg=$ITSYOUONLINE_ORG
 
+echo zerotierid
+echo $zerotierid
+
 export SSHKEYNAME=id_rsa
 export GIGBRANCH=master
 export GIGSAFE=1
