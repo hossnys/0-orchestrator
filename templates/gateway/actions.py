@@ -114,13 +114,22 @@ def processChange(job):
     portforwardchanges = gatewaydata['portforwards'] != args.get('portforwards')
 
     if nicchanges:
+        nics_args={'nics': args['nics']}
+
         cloudInitServ = service.aysrepo.serviceGet(role='cloudinit', instance=service.name)
-        j.tools.async.wrappers.sync(cloudInitServ.executeAction('update', context=job.context, args={'nics': args['nics']}))
+        j.tools.async.wrappers.sync(cloudInitServ.executeAction('update', context=job.context, args=nics_args))
 
         dhcpServ = service.aysrepo.serviceGet(role='dhcp', instance=service.name)
         j.tools.async.wrappers.sync(dhcpServ.executeAction('update', context=job.context, args=args))
 
+        # apply changes in container
+        cont_service = service.aysrepo.serviceGet(role='container', instance=service.name)
+        j.tools.async.wrappers.sync(cont_service.executeAction('update', context=job.context, args=nics_args))
+
         service.model.data.nics = args['nics']
+
+        # setup zerotier bridges for added nics
+        self.setup_zerotierbridges(service)
 
     if nicchanges or portforwardchanges:
         firewallServ = service.aysrepo.serviceGet(role='firewall', instance=service.name)
@@ -145,7 +154,6 @@ def processChange(job):
 
     service.saveAll()
 
-
 def uninstall(job):
     service = job.service
     container = service.producers.get('container')[0]
@@ -156,19 +164,56 @@ def uninstall(job):
 
 def start(job):
     from zeroos.orchestrator.sal.Container import Container
-    import time
-    from zerotier import client
 
     service = job.service
     container = service.producers.get('container')[0]
     if str(container.model.data.status) == 'halted':
         j.tools.async.wrappers.sync(container.executeAction('start', context=job.context))
 
-    # setup zerotiers bridges
     containerobj = Container.from_ays(container, job.context['token'])
-    nics = service.model.data.to_dict()['nics']  # get dict version of nics
     # setup resolv.conf
     containerobj.upload_content('/etc/resolv.conf', 'nameserver 127.0.0.1\n')
+
+    # setup zerotier bridges
+    self.setup_zerotierbridges(service)
+
+    # setup cloud-init magical ip
+    loaddresses = ip.addr.list('lo')
+    magicip = '169.254.169.254/32'
+    if magicip not in loaddresses:
+        ip.addr.add('lo', magicip)
+
+    # start services
+    http = container.consumers.get('http')[0]
+    dhcp = container.consumers.get('dhcp')[0]
+    cloudinit = container.consumers.get('cloudinit')[0]
+    firewall = container.consumers.get('firewall')[0]
+
+    j.tools.async.wrappers.sync(container.executeAction('start', context=job.context))
+    j.tools.async.wrappers.sync(dhcp.executeAction('start', context=job.context))
+    j.tools.async.wrappers.sync(http.executeAction('start', context=job.context))
+    j.tools.async.wrappers.sync(firewall.executeAction('start', context=job.context))
+    j.tools.async.wrappers.sync(cloudinit.executeAction('start', context=job.context))
+    service.model.data.status = "running"
+
+
+def stop(job):
+    service = job.service
+    container = service.producers.get('container')[0]
+    if container:
+        j.tools.async.wrappers.sync(container.executeAction('stop', context=job.context))
+        service.model.data.status = "halted"
+
+
+def setup_zerotierbridges(service):
+    from zeroos.orchestrator.sal.Container import Container
+    from zerotier import client
+    import time
+
+    container = service.producers.get('container')[0]
+    containerobj = Container.from_ays(container, job.context['token'])
+    # get dict version of nics
+    nics = service.model.data.to_dict()['nics']
 
     def get_zerotier_nic(zerotierid):
         for zt in containerobj.client.zerotier.list():
@@ -234,30 +279,3 @@ def start(job):
 
     service.model.data.zerotiernodeid = container.model.data.zerotiernodeid
     service.saveAll()
-
-    # setup cloud-init magical ip
-    loaddresses = ip.addr.list('lo')
-    magicip = '169.254.169.254/32'
-    if magicip not in loaddresses:
-        ip.addr.add('lo', magicip)
-
-    # start services
-    http = container.consumers.get('http')[0]
-    dhcp = container.consumers.get('dhcp')[0]
-    cloudinit = container.consumers.get('cloudinit')[0]
-    firewall = container.consumers.get('firewall')[0]
-
-    j.tools.async.wrappers.sync(container.executeAction('start', context=job.context))
-    j.tools.async.wrappers.sync(dhcp.executeAction('start', context=job.context))
-    j.tools.async.wrappers.sync(http.executeAction('start', context=job.context))
-    j.tools.async.wrappers.sync(firewall.executeAction('start', context=job.context))
-    j.tools.async.wrappers.sync(cloudinit.executeAction('start', context=job.context))
-    service.model.data.status = "running"
-
-
-def stop(job):
-    service = job.service
-    container = service.producers.get('container')[0]
-    if container:
-        j.tools.async.wrappers.sync(container.executeAction('stop', context=job.context))
-        service.model.data.status = "halted"
