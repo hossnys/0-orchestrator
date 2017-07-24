@@ -128,8 +128,8 @@ def processChange(job):
 
         service.model.data.nics = args['nics']
 
-        # setup zerotier bridges for added nics
-        self.setup_zerotierbridges(service)
+        # setup zerotierbridges
+        setup_zerotierbridges(job)
 
     if nicchanges or portforwardchanges:
         firewallServ = service.aysrepo.serviceGet(role='firewall', instance=service.name)
@@ -175,9 +175,10 @@ def start(job):
     containerobj.upload_content('/etc/resolv.conf', 'nameserver 127.0.0.1\n')
 
     # setup zerotier bridges
-    self.setup_zerotierbridges(service)
+    setup_zerotierbridges(job)
 
     # setup cloud-init magical ip
+    ip = containerobj.client.ip
     loaddresses = ip.addr.list('lo')
     magicip = '169.254.169.254/32'
     if magicip not in loaddresses:
@@ -205,11 +206,12 @@ def stop(job):
         service.model.data.status = "halted"
 
 
-def setup_zerotierbridges(service):
+def setup_zerotierbridges(job):
     from zeroos.orchestrator.sal.Container import Container
     from zerotier import client
     import time
 
+    service=job.service
     container = service.producers.get('container')[0]
     containerobj = Container.from_ays(container, job.context['token'])
     # get dict version of nics

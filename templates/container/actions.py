@@ -112,7 +112,7 @@ def update(job):
         all_nics=cl.list()[str(con.id)]['container']['arguments']['nics']
         nic_id=get_nic_id(nic)
         for i in range(len(all_nics)):
-            if nic_id==get_nic_id(all_nics[i]):
+            if all_nics[i]['state']=='configured' and nic_id==get_nic_id(all_nics[i]):
                 job.logger.info("nic with id {} found on index {}".format(nic_id, i))
                 return i
         raise j.exceptions.RuntimeError("Nic with id {} not found".format(nic_id))
@@ -122,7 +122,6 @@ def update(job):
         if get_nic_id(nic) not in ids_updated_nics:
             job.logger.info("Removing nic from container {}: {}".format(con.id, nic))
             cl.nic_remove(con.id, get_nic_index(nic))
-            # TODO: remove of ZT interface doesn't work like that => fix
 
     # check for nics to be added
     for nic in updated_nics:
