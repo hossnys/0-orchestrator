@@ -6,6 +6,7 @@ import os
 import sys
 import threading
 import subprocess
+import configparser
 
 
 def create_new_device(manager, hostname, zt_net_id, itsyouonline_org, branch='master'):
@@ -23,23 +24,26 @@ def create_new_device(manager, hostname, zt_net_id, itsyouonline_org, branch='ma
 
 def delete_devices(manager):
     config = configparser.ConfigParser()
-    config.read('config.ini')
-    hostname = config['main']['0_core_machines']
-    if hostname:
+    config.read('api_testing/config.ini')
+    machines = config['main']['0_core_machines']
+    
+    if machines:
+        machines = machines.split(',')
         project = manager.list_projects()[0]
         devices = manager.list_devices(project.id)
-    for dev in devices:
-        if 'orch' in dev.hostname:
-            device_id = dev.id
-            params = {
-                     "hostname": dev.hostname,
-                     "description": "string",
-                     "billing_cycle": "hourly",
-                     "userdata": "",
-                     "locked": False,
-                     "tags": []
-                     }
-            manager.call_api('devices/%s' % device_id, type='DELETE', params=params)
+        for hostname in machines:
+            for dev in devices:
+                if dev.hostname == hostname:
+                    device_id = dev.id
+                    params = {
+                             "hostname": dev.hostname,
+                             "description": "string",
+                             "billing_cycle": "hourly",
+                             "userdata": "",
+                             "locked": False,
+                             "tags": []
+                             }
+                    manager.call_api('devices/%s' % device_id, type='DELETE', params=params)
 
 
 def create_pkt_machine(manager, zt_net_id, itsyouonline_org, branch='master'):
