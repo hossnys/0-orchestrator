@@ -1,8 +1,8 @@
 matrix:
   include:
     - language: python
-        sudo: true
-        dist: trusty
-        python: 3.5
-        script:
-          - sleep 5
+      sudo: true
+      dist: trusty
+      python: 3.5
+      script:
+        - sleep 5
