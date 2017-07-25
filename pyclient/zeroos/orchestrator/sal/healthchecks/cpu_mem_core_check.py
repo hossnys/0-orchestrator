@@ -12,7 +12,7 @@ def action(node):
     category = 'System Load'
 
     total_mem = node.client.info.mem()['total']/(1024*1024)
-    mem_history = node.client.aggregator.query('machine.memory.ram.available')['machine.memory.ram.available']['history']
+    mem_history = node.client.aggregator.query('machine.memory.ram.available').get('machine.memory.ram.available', {}).get('history', {})
 
 
     if '3600' not in mem_history:
@@ -21,6 +21,7 @@ def action(node):
         memoryresult['resource'] = category
         memoryresult['message'] = 'Average memory load is not collected yet'
         memoryresult['id'] = 'MEMORY'
+        memoryresult['category'] = 'System'
         memoryresult['name'] = 'MEMORY'
     else:
         avg_available_mem = mem_history['3600'][-1]['avg']
@@ -44,6 +45,7 @@ def action(node):
         cpuresult['resource'] = category
         cpuresult['message'] = 'Average CPU load is not collected yet'
         cpuresult['id'] = "CPU"
+        cpuresult['category'] = "System"
         cpuresult['name'] = "CPU"
     else:
         cpuavg = cpupercent / float(count)
@@ -74,6 +76,7 @@ def get_results(type_, percent):
         eco.gid = j.application.whoAmI.gid
         eco.process()
     return result
+
 
 if __name__ == '__main__':
     import yaml
