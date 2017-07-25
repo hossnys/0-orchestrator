@@ -5,4 +5,4 @@ matrix:
       dist: trusty
       python: 3.5
       script:
-        - sleep 5
+        - bash tests/performance/travis_script.sh
