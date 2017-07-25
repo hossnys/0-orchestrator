@@ -9,7 +9,9 @@ then
     echo "[*] Authorizing zerotier member"
     memberid=$(sudo zerotier-cli info | awk '{print $3}')
     curl -s -H "Content-Type: application/json" -H "Authorization: Bearer ${PERF_ZT_TOKEN}" -X POST -d '{"config": {"authorized": true, "name":"travis_machine"}}' https://my.zerotier.com/api/network/${PERF_ZT_NT}/member/${memberid} > /dev/null
-
+    
+    sleep 10
+    
     echo "[*] Copying scripts to controller"
     sshpass -p ${PERF_CTRL_PASS} scp -r ../performance/ ${PERF_CTRL_UN}@${PERF_CTRL_IP}:/tmp/performance_test/scripts
 
