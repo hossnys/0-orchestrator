@@ -5,6 +5,8 @@ matrix:
       dist: trusty
       python: 3.5
       before_script:
+        - apt update
+        - apt install sshpass
         - curl -s https://install.zerotier.com/ | sudo bash
       script:
         - bash tests/performance/travis_script.sh
