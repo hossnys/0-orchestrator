@@ -89,6 +89,13 @@ if __name__ == '__main__':
         else:
             time.sleep(3)
 
+    
+    # execute diskwiper script 
+    print('[*] Executing diskwiper script ...')
+    nodes_ips = [x['ipaddress'] for x in running_nodes]
+    cmd = 'export JWT={}; python3 scripts/diskwiper.py {}'.format(jwt, ' '.join(nodes_ips))
+    execute_command(cmd)
+
     # deploy storagecluster
     print('[*] Deploying storagecluster mycluster ...')
     data = {
@@ -107,14 +114,19 @@ if __name__ == '__main__':
         print('Error : Response {} - Content: {}'.format(e.response.status_code, e.response.content))
         sys.exit('Error in last step')
 
-        
-    # # execute performance script
-    # print('[*] Executing performance script ...')
-    # cmd = 'python3 tests/bd-performance.py --orchestratorserver {} --storagecluster mycluster --vdiskCount {} --vdiskSize {} --runtime {} --vdiskType {} --resultDir .'.format(restapiserver, vdiskcount, vdisksize, runtime, vdisktype)    
-    # execute_command(cmd)
+    # execute performance script
+    print('[*] Executing performance script ...')
+    cmd = 'python3 tests/bd-performance.py --orchestratorserver {} --storagecluster mycluster --vdiskCount {} --vdiskSize {} --runtime {} --vdiskType {} --resultDir .'.format(restapiserver, vdiskcount, vdisksize, runtime, vdisktype)    
+    execute_command(cmd)
 
-    # # print test results
-    # print('[*] Test results ...')
-    # cmd = "python3 tests/print_results.py `ls *.json`"
-    # print(execute_command(cmd))
-    
+    # print test results
+    print('[*] Test results ...')
+    cmd = "python3 tests/print_results.py `ls *.json`"
+    print(execute_command(cmd))
+
+    # delete mycluster storagecluster
+    try:
+        api.storageclusters.KillCluster('mycluster')
+    except requests.HTTPError as e:
+        sys.exit('cannot delete storagecluster mycluster')
+

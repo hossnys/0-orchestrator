@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 from zeroos.core0.client import Client
-import sys
+import sys, os
 
 
 def main():
     args = sys.argv[1:]
     for nodehost in args:
-        client = Client(nodehost)
+        client = Client(nodehost, password=os.environ['JWT'])
         print('Wiping node {hostname}'.format(**client.info.os()))
         mounteddevices = {mount['device']: mount for mount in client.info.disk()}
 
