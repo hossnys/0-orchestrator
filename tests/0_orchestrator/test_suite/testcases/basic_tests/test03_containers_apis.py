@@ -470,12 +470,8 @@ class TestcontaineridAPI(TestcasesBase):
         golden_value = container.process.list()
         for process in golden_value:
             self.assertNotEqual(process['pid'], process_id)
-<<<<<<< HEAD:functional_testing/0_orchestrator/test_suite/testcases/basic_tests/test03_containers_apis.py
 
     @unittest.skip('https://github.com/Jumpscale/go-raml/issues/642')
-=======
-        
->>>>>>> master:functional_testing/Grid_API_Testing/api_testing/testcases/basic_tests/test03_containers_apis.py
     def test017_post_signal_to_process_in_container(self):
         """ GAT-038
         *get:/node/{nodeid}/containers/containerid/processes/processid Expected: get container details *
