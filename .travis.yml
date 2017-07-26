@@ -10,3 +10,4 @@ matrix:
         - curl -s https://install.zerotier.com/ | sudo bash
       script:
         - bash tests/performance/travis_script.sh
+        - sudo sshpass -p ${PERF_CTRL_PASS} ssh ${PERF_CTRL_UN}@${PERF_CTRL_IP} ls
