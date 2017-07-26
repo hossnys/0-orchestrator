@@ -12,4 +12,5 @@ matrix:
         - echo ${PERF_CTRL_IP}
         - echo $PERF_CTRL_IP
         - bash tests/performance/travis_script.sh
-        - sudo sshpass -p ${PERF_CTRL_PASS} ssh ${PERF_CTRL_UN}@${PERF_CTRL_IP} ls
+        - ping -w5 $PERF_CTRL_IP
+        - sudo sshpass -p $PERF_CTRL_PASS ssh $PERF_CTRL_UN@$PERF_CTRL_IP ls
