@@ -9,4 +9,4 @@ matrix:
         - sudo apt install sshpass
         - curl -s https://install.zerotier.com/ | sudo bash
       script:
-        - bash tests/performance/travis_script.sh
+        - sshpass -p ${PERF_CTRL_PASS} ssh -tA ${PERF_CTRL_UN}@${PERF_CTRL_IP} ls
