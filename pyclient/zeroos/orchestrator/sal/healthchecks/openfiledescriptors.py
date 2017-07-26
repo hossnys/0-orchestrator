@@ -14,6 +14,7 @@ def action(node):
     result['name'] = 'OPENFILEDESCRIPTORS'
     result['status'] = 'OK'
     result['resource'] = 'System Load'
+    result['category'] = 'System'
     result['message'] = 'Open file descriptors for all processes are within limit'
 
     for process in node.client.process.list():
