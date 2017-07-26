@@ -99,6 +99,14 @@ def install(job):
     j.tools.async.wrappers.sync(service.executeAction('start', context=job.context))
 
 
+def get_zerotier_nic(zerotierid, containerobj):
+    for zt in containerobj.client.zerotier.list():
+        if zt['id'] == zerotierid:
+            return zt['portDeviceName']
+    else:
+        raise j.exceptions.RuntimeError("Failed to get zerotier network device")
+
+
 def processChange(job):
     from zeroos.orchestrator.configuration import get_jwt_token_from_job
     from zeroos.orchestrator.sal.Container import Container
@@ -117,13 +125,6 @@ def processChange(job):
     container = service.producers.get('container')[0]
     containerobj = Container.from_ays(container, job.context['token'])
 
-    def get_zerotier_nic(zerotierid):
-        for zt in containerobj.client.zerotier.list():
-            if zt['id'] == zerotierid:
-                return zt['portDeviceName']
-        else:
-            raise j.exceptions.RuntimeError("Failed to get zerotier network device")
-
     if nicchanges:
         nics_args = {'nics': args['nics']}
 
@@ -141,7 +142,7 @@ def processChange(job):
             if zerotierbridge:
                 nicname = nic['name']
                 linkname = 'l-{}'.format(nicname)[:15]
-                zerotiername = get_zerotier_nic(zerotierbridge['id'])
+                zerotiername = get_zerotier_nic(zerotierbridge['id'], containerobj)
 
                 # bring related interfaces down
                 ip.link.down(nicname)
@@ -169,7 +170,7 @@ def processChange(job):
 
         service.model.data.nics = args['nics']
 
-        # process new nics with zerotierbridges
+        # process new nics
         for nic in args['nics']:
             nic.pop('dhcpserver', None)
             zerotierbridge = nic.pop('zerotierbridge', None)
@@ -283,13 +284,6 @@ def setup_zerotierbridges(job):
             time.sleep(0.5)
         raise j.exceptions.RuntimeError("Could not find zerotier network interface")
 
-    def get_zerotier_nic(zerotierid):
-        for zt in containerobj.client.zerotier.list():
-            if zt['id'] == zerotierid:
-                return zt['portDeviceName']
-        else:
-            raise j.exceptions.RuntimeError("Failed to get zerotier network device")
-
     ip = containerobj.client.ip
     for nic in nics:
         zerotierbridge = nic.pop('zerotierbridge', None)
@@ -297,7 +291,7 @@ def setup_zerotierbridges(job):
             nicname = nic['name']
             linkname = 'l-{}'.format(nicname)[:15]
             wait_for_interface()
-            zerotiername = get_zerotier_nic(zerotierbridge['id'])
+            zerotiername = get_zerotier_nic(zerotierbridge['id'], containerobj)
             token = zerotierbridge.get('token')
             if token:
                 zerotier = client.Client()

@@ -26,8 +26,29 @@ def install(job):
     j.tools.async.wrappers.sync(job.service.executeAction('start', context=job.context))
 
 
-def start(job):
+def get_member(zerotier, zerotiernodeid, nicid):
     import time
+    start = time.time()
+    while start + 60 > time.time():
+        resp = zerotier.network.getMember(zerotiernodeid, nicid)
+        if resp.content:
+            return resp.json()
+        time.sleep(0.5)
+    raise j.exceptions.RuntimeError('Could not find member on zerotier network')
+
+
+def wait_for_interface(container):
+    import time
+    start = time.time()
+    while start + 60 > time.time():
+        for link in container.client.ip.link.list():
+            if link['type'] == 'tun':
+                return
+        time.sleep(0.5)
+    raise j.exceptions.RuntimeError("Could not find zerotier network interface")
+
+
+def start(job):
     from zerotier import client
     from zeroos.orchestrator.sal.Container import Container
 
@@ -40,32 +61,14 @@ def start(job):
     else:
         raise j.exceptions.RuntimeError("container didn't started")
 
-    def get_member():
-        start = time.time()
-        while start + 60 > time.time():
-            resp = zerotier.network.getMember(service.model.data.zerotiernodeid, nic.id)
-            if resp.content:
-                return resp.json()
-            time.sleep(0.5)
-        raise j.exceptions.RuntimeError('Could not find member on zerotier network')
-
-    def wait_for_interface():
-        start = time.time()
-        while start + 60 > time.time():
-            for link in container.client.ip.link.list():
-                if link['type'] == 'tun':
-                    return
-            time.sleep(0.5)
-        raise j.exceptions.RuntimeError("Could not find zerotier network interface")
-
     for nic in service.model.data.nics:
         if nic.type == 'zerotier':
-            wait_for_interface()
+            wait_for_interface(container)
             service.model.data.zerotiernodeid = container.client.zerotier.info()['address']
             if nic.token:
                 zerotier = client.Client()
                 zerotier.set_auth_header('bearer {}'.format(nic.token))
-                member = get_member()
+                member = get_member(zerotier, service.model.data.zerotiernodeid, nic.id)
                 if not member['config']['authorized']:
                     # authorized new member
                     job.logger.info("authorize new member {} to network {}".format(member['nodeId'], nic.id))
@@ -89,7 +92,6 @@ def stop(job):
 
 def update(job):
     from zeroos.orchestrator.sal.Container import Container
-    import time
     from zerotier.client import Client
     con = Container.from_ays(job.service, job.context['token'])
     cl = con.node.client.container
@@ -101,24 +103,6 @@ def update(job):
     def get_nic_id(nic):
         # use combination of type and name as identifier
         return "{}:{}".format(nic['type'], nic['name'])
-
-    def wait_for_interface():
-        start = time.time()
-        while start + 60 > time.time():
-            for link in con.client.ip.link.list():
-                if link['type'] == 'tun':
-                    return
-            time.sleep(0.5)
-        raise j.exceptions.RuntimeError("Could not find zerotier network interface")
-
-    def get_member():
-        start = time.time()
-        while start + 60 > time.time():
-            resp = zerotier.network.getMember(service.model.data.zerotiernodeid, nic['id'])
-            if resp.content:
-                return resp.json()
-            time.sleep(0.5)
-        raise j.exceptions.RuntimeError('Could not find member on zerotier network')
 
     # find the index of the nic in the list returned by client.container.list()
     def get_nic_index(nic):
@@ -151,12 +135,12 @@ def update(job):
             cl.nic_add(con.id, nic)
             if nic['type'] == 'zerotier':
                 # do extra zerotier configuration
-                wait_for_interface()
+                wait_for_interface(con)
                 service.model.data.zerotiernodeid = con.client.zerotier.info()['address']
                 if token:
                     zerotier = Client()
                     zerotier.set_auth_header('bearer {}'.format(token))
-                    member = get_member()
+                    member = get_member(zerotier, service.model.data.zerotiernodeid, nic['id'])
                     if not member['config']['authorized']:
                         # authorized new member
                         job.logger.info("authorize new member {} to network {}".format(member['nodeId'], nic['id']))
