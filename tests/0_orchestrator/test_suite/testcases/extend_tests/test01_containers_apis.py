@@ -15,22 +15,10 @@ class TestcontaineridAPI(TestcasesBase):
         self.containers_api = ContainersAPI()
         self.bridges_api = BridgesAPI()
         self.storagepool_api = StoragepoolsAPI()
-<<<<<<< HEAD:functional_testing/0_orchestrator/test_suite/testcases/extend_tests/test01_containers_apis.py
-
         self.createdcontainer = []
 
     def setUp(self):
         super().setUp()
-=======
-        self.createdcontainer=[]
-
-        self.lg.info('Choose one random node of list of running nodes.')
-        self.node_id = self.get_random_node()
-        self.zeroCore_ip= [x['ip'] for x in self.nodes if x['id'] == self.node_id]
-        self.assertTrue(self.zeroCore_ip,'No node match the random node')
-        self.jwt = self.nodes_api.jwt
-        self.zeroCore = Client(self.zeroCore_ip[0], password=self.jwt)
->>>>>>> master:functional_testing/Grid_API_Testing/api_testing/testcases/extend_tests/test01_containers_apis.py
         self.root_url = "https://hub.gig.tech/gig-official-apps/ubuntu1604.flist"
         self.storage = "ardb://hub.gig.tech:16379"
         self.container_name = self.rand_str()
