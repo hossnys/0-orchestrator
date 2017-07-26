@@ -4,26 +4,6 @@ import unittest
 
 
 class TestNodeidAPI(TestcasesBase):
-<<<<<<< HEAD:functional_testing/0_orchestrator/test_suite/testcases/basic_tests/test01_nodeid_apis.py
-=======
-    def setUp(self):
-        super().setUp()
-        self.nodes_api = NodesAPI()
-        self.jwt = self.nodes_api.jwt
-        self.lg.info('Choose one random node of list of running nodes.')
-        self.node_id = self.get_random_node()
-        if self.node_id is None:
-            self.lg.info(' No node found')
-            return
-        self.node = {}
-        for node in self.nodes:
-            if node['id'] == self.node_id:
-                self.g8os_ip = node['ip']
-                self.node = node
-                break
-        self.python_client = Client(self.g8os_ip, password=self.jwt)
-
->>>>>>> master:functional_testing/Grid_API_Testing/api_testing/testcases/basic_tests/test01_nodeid_apis.py
     def test001_list_nodes(self):
         """ GAT-001
         *GET:/node/ Expected: List of all nodes*
