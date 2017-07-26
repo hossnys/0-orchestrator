@@ -232,14 +232,8 @@ class TestcontaineridAPI(TestcasesBase):
 
         response = self.containers_api.delete_containers_containerid_jobs_jobid(self.nodeid, self.data['name'], job_id)
         self.assertEqual(response.status_code, 204)
-<<<<<<< HEAD:functional_testing/0_orchestrator/test_suite/testcases/basic_tests/test03_containers_apis.py
         self.assertTrue(self.core0_client.wait_on_container_job_update(self.data['name'], job_id, 100, True))
-
-    @unittest.skip('https://github.com/zero-os/0-orchestrator/issues/637')
-=======
-        self.assertTrue(self.g8core.wait_on_container_job_update(container_name, job_id, 100, True))
-    
->>>>>>> master:functional_testing/Grid_API_Testing/api_testing/testcases/basic_tests/test03_containers_apis.py
+        
     def test009_post_signal_job_in_container_details(self):
         """ GAT-030
         *get:/node/{nodeid}/containers/containerid/jobs/jobid Expected: get container details *
