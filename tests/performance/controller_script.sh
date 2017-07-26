@@ -43,10 +43,10 @@ ssh -tA root@localhost -p 2222 "export GIGDIR=~/gig; curl -sL https://raw.github
 
 #passing jwt
 echo "Enabling JWT..." 
-scp -P 2222 /tmp/performance_test/scripts/js9_docker_script.sh root@localhost:
+scp -P 2222 /tmp/performance_test/0-orchestrator/tests/performance/js9_docker_script.sh root@localhost:
 ssh -tA root@localhost -p 2222 "export ITSYOUONLINE_CL_ID=${ITSYOUONLINE_CL_ID}; export ITSYOUONLINE_CL_SECRET=${ITSYOUONLINE_CL_SECRET}; export ITSYOUONLINE_ORG=${ITSYOUONLINE_ORG}; export TRAVIS_BRANCH=${TRAVIS_BRANCH}; source js9_docker_script.sh"
 
 jwt=$(ssh -p 2222 -tA root@localhost ays generatetoken --clientid ${ITSYOUONLINE_CL_ID} --clientsecret ${ITSYOUONLINE_CL_SECRET} --organization ${ITSYOUONLINE_ORG} --validity 3600 | grep export)
 eval $jwt
 
-python3 /tmp/performance_test/scripts/execute_perf_script.py --jwt $JWT --zerotierid ${PERF_ZT_NT} --organization ${ITSYOUONLINE_ORG} --branch ${TRAVIS_BRANCH} --ipminodes ${PERF_IPMI_IPS} --disktype ${PERF_DISK_TYPE} --servers ${PERF_SERVERS} --vdiskcount ${PERF_VDISK_COUNT} --vdisksize ${PERF_VDISK_SIZE} --vdisktype ${PERF_VDISK_TYPE} --runtime ${PERF_RUNTIME}
+python3 /tmp/performance_test/0-orchestrator/tests/performance/execute_perf_script.py --jwt $JWT --zerotierid ${PERF_ZT_NT} --organization ${ITSYOUONLINE_ORG} --branch ${TRAVIS_BRANCH} --ipminodes ${PERF_IPMI_IPS} --disktype ${PERF_DISK_TYPE} --servers ${PERF_SERVERS} --vdiskcount ${PERF_VDISK_COUNT} --vdisksize ${PERF_VDISK_SIZE} --vdisktype ${PERF_VDISK_TYPE} --runtime ${PERF_RUNTIME}
