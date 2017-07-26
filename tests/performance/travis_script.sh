@@ -14,6 +14,8 @@ then
     
     echo "[*] Executing controller script"
     ping -w5 ${PERF_CTRL_IP}
+    
+    sshpass -p ${PERF_CTRL_PASS} ssh ${PERF_CTRL_UN}@${PERF_CTRL_IP} 'ls'
 
     #echo "[*] Copying scripts to controller"
     #sshpass -p ${PERF_CTRL_PASS} scp -r ../performance/ ${PERF_CTRL_UN}@${PERF_CTRL_IP}:/tmp/performance_test/scripts
