@@ -47,9 +47,23 @@ def wait_for_interface(container):
         time.sleep(0.5)
     raise j.exceptions.RuntimeError("Could not find zerotier network interface")
 
+def zerotier_nic_config(job, container, nic):
+    from zerotier import client
+    service = job.service
+    wait_for_interface(container)
+    service.model.data.zerotiernodeid = container.client.zerotier.info()['address']
+    if nic.token:
+        zerotier = client.Client()
+        zerotier.set_auth_header('bearer {}'.format(nic.token))
+        member = get_member(zerotier, service.model.data.zerotiernodeid, nic.id)
+        if not member['config']['authorized']:
+            # authorized new member
+            job.logger.info("authorize new member {} to network {}".format(member['nodeId'], nic.id))
+            member['config']['authorized'] = True
+            zerotier.network.updateMember(member, member['nodeId'], nic.id)
+
 
 def start(job):
-    from zerotier import client
     from zeroos.orchestrator.sal.Container import Container
 
     service = job.service
@@ -63,17 +77,7 @@ def start(job):
 
     for nic in service.model.data.nics:
         if nic.type == 'zerotier':
-            wait_for_interface(container)
-            service.model.data.zerotiernodeid = container.client.zerotier.info()['address']
-            if nic.token:
-                zerotier = client.Client()
-                zerotier.set_auth_header('bearer {}'.format(nic.token))
-                member = get_member(zerotier, service.model.data.zerotiernodeid, nic.id)
-                if not member['config']['authorized']:
-                    # authorized new member
-                    job.logger.info("authorize new member {} to network {}".format(member['nodeId'], nic.id))
-                    member['config']['authorized'] = True
-                    zerotier.network.updateMember(member, member['nodeId'], nic.id)
+            zerotier_nic_config(job, container, nic)
 
     service.saveAll()
 
@@ -92,9 +96,9 @@ def stop(job):
 
 def update(job):
     from zeroos.orchestrator.sal.Container import Container
-    from zerotier.client import Client
-    con = Container.from_ays(job.service, job.context['token'])
-    cl = con.node.client.container
+    
+    container = Container.from_ays(job.service, job.context['token'])
+    cl = container.node.client.container
     service = job.service
 
     updated_nics = job.model.args['nics']
@@ -106,13 +110,14 @@ def update(job):
 
     # find the index of the nic in the list returned by client.container.list()
     def get_nic_index(nic):
-        all_nics = cl.list()[str(con.id)]['container']['arguments']['nics']
+        all_nics = cl.list()[str(container.id)]['container']['arguments']['nics']
         nic_id = get_nic_id(nic)
         for i in range(len(all_nics)):
             if all_nics[i]['state'] == 'configured' and nic_id == get_nic_id(all_nics[i]):
                 job.logger.info("nic with id {} found on index {}".format(nic_id, i))
                 return i
         raise j.exceptions.RuntimeError("Nic with id {} not found".format(nic_id))
+
 
     ids_current_nics = [get_nic_id(n) for n in current_nics]
     ids_updated_nics = [get_nic_id(n) for n in updated_nics]
@@ -124,30 +129,23 @@ def update(job):
     # check for nics to be removed
     for nic in current_nics:
         if get_nic_id(nic) not in ids_updated_nics:
-            job.logger.info("Removing nic from container {}: {}".format(con.id, nic))
-            cl.nic_remove(con.id, get_nic_index(nic))
+            job.logger.info("Removing nic from container {}: {}".format(container.id, nic))
+            cl.nic_remove(container.id, get_nic_index(nic))
+
+    # update nics model
+    service.model.data.nics = updated_nics
 
     # check for nics to be added
-    for nic in updated_nics:
-        if get_nic_id(nic) not in ids_current_nics:
-            token = nic.pop('token', None)
-            job.logger.info("Adding nic to container {}: {}".format(con.id, nic))
-            cl.nic_add(con.id, nic)
-            if nic['type'] == 'zerotier':
+    for nic in service.model.data.nics:
+        nic_dict = nic.to_dict()
+        if get_nic_id(nic_dict) not in ids_current_nics:
+            token = nic_dict.pop('token', None)
+            job.logger.info("Adding nic to container {}: {}".format(container.id, nic_dict))
+            cl.nic_add(container.id, nic_dict)
+            if nic.type == 'zerotier':
                 # do extra zerotier configuration
-                wait_for_interface(con)
-                service.model.data.zerotiernodeid = con.client.zerotier.info()['address']
-                if token:
-                    zerotier = Client()
-                    zerotier.set_auth_header('bearer {}'.format(token))
-                    member = get_member(zerotier, service.model.data.zerotiernodeid, nic['id'])
-                    if not member['config']['authorized']:
-                        # authorized new member
-                        job.logger.info("authorize new member {} to network {}".format(member['nodeId'], nic['id']))
-                        member['config']['authorized'] = True
-                        zerotier.network.updateMember(member, member['nodeId'], nic['id'])
+                zerotier_nic_config(job, container, nic)
 
-    service.model.data.nics = updated_nics
     service.saveAll()
 
 
