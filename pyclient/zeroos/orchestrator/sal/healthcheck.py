@@ -66,3 +66,8 @@ class HealthCheck:
         from .healthchecks.log_rotator import action
         result = action(self.node)
         return result
+
+    def check_ofd(self):
+        from .healthchecks.openfiledescriptors import action
+        result = action(self.node)
+        return result

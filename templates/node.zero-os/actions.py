@@ -145,9 +145,7 @@ def monitor(job):
     else:
         service.model.data.status = 'halted'
 
-    flist = config.get('healthcheck-flist', 'https://hub.gig.tech/deboeckj/js9container.flist')
-    with node.healthcheck.with_container(flist) as cont:
-        update_healthcheck(service, node.healthcheck.run(cont, 'openfiledescriptors'))
+    update_healthcheck(service, node.healthcheck.check_ofd())
     update_healthcheck(service, node.healthcheck.calc_cpu_mem())
     # call log rotator
     update_healthcheck(service, node.healthcheck.rotate_logs())
