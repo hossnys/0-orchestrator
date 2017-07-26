@@ -101,6 +101,7 @@ def install(job):
 
 def processChange(job):
     from zeroos.orchestrator.configuration import get_jwt_token_from_job
+    from zeroos.orchestrator.sal.Container import Container
     service = job.service
     args = job.model.args
     category = args.pop('changeCategory')
@@ -113,8 +114,18 @@ def processChange(job):
     httproxychanges = gatewaydata['httpproxies'] != args.get('httpproxies')
     portforwardchanges = gatewaydata['portforwards'] != args.get('portforwards')
 
+    container = service.producers.get('container')[0]
+    containerobj = Container.from_ays(container, job.context['token'])
+
+    def get_zerotier_nic(zerotierid):
+        for zt in containerobj.client.zerotier.list():
+            if zt['id'] == zerotierid:
+                return zt['portDeviceName']
+        else:
+            raise j.exceptions.RuntimeError("Failed to get zerotier network device")
+
     if nicchanges:
-        nics_args={'nics': args['nics']}
+        nics_args = {'nics': args['nics']}
 
         cloudInitServ = service.aysrepo.serviceGet(role='cloudinit', instance=service.name)
         j.tools.async.wrappers.sync(cloudInitServ.executeAction('update', context=job.context, args=nics_args))
@@ -122,13 +133,58 @@ def processChange(job):
         dhcpServ = service.aysrepo.serviceGet(role='dhcp', instance=service.name)
         j.tools.async.wrappers.sync(dhcpServ.executeAction('update', context=job.context, args=args))
 
+        ip = containerobj.client.ip
+
+        # remove zerotierbridges in old nics
+        for nic in service.model.data.to_dict()['nics']:
+            zerotierbridge = nic.pop('zerotierbridge', None)
+            if zerotierbridge:
+                nicname = nic['name']
+                linkname = 'l-{}'.format(nicname)[:15]
+                zerotiername = get_zerotier_nic(zerotierbridge['id'])
+
+                # bring related interfaces down
+                ip.link.down(nicname)
+                ip.link.down(linkname)
+                ip.link.down(zerotiername)
+
+                # remove IPs
+                ipaddresses = ip.addr.list(nicname)
+                for ipaddress in ipaddresses:
+                    ip.addr.delete(nicname, ipaddress)
+
+                # delete interfaces/bridge
+                ip.bridge.delif(nicname, zerotiername)
+                ip.bridge.delif(nicname, linkname)
+                ip.bridge.delete(nicname)
+
+                # rename interface and readd IPs
+                ip.link.name(linkname, nicname)
+                for ipaddress in ipaddresses:
+                    ip.addr.add(nicname, ipaddress)
+
+                # bring interfaces up
+                ip.link.up(nicname)
+                ip.link.up(zerotiername)
+
+        service.model.data.nics = args['nics']
+
+        # process new nics with zerotierbridges
+        for nic in args['nics']:
+            nic.pop('dhcpserver', None)
+            zerotierbridge = nic.pop('zerotierbridge', None)
+            if zerotierbridge:
+                args['nics'].append(
+                    {
+                        'id': zerotierbridge['id'], 'type': 'zerotier',
+                        'name': 'z-{}'.format(nic['name']), 'token': zerotierbridge.get('token', '')
+                    })
+
         # apply changes in container
         cont_service = service.aysrepo.serviceGet(role='container', instance=service.name)
         j.tools.async.wrappers.sync(cont_service.executeAction('update', context=job.context, args=nics_args))
 
-        service.model.data.nics = args['nics']
-
-        # setup zerotierbridges
+        # setup new zerotierbridges
         setup_zerotierbridges(job)
 
     if nicchanges or portforwardchanges:
@@ -153,6 +209,7 @@ def processChange(job):
         service.model.data.advanced = args["advanced"]
 
     service.saveAll()
+
 
 def uninstall(job):
     service = job.service
@@ -211,18 +268,11 @@ def setup_zerotierbridges(job):
     from zerotier import client
     import time
 
-    service=job.service
+    service = job.service
     container = service.producers.get('container')[0]
     containerobj = Container.from_ays(container, job.context['token'])
     # get dict version of nics
     nics = service.model.data.to_dict()['nics']
-
-    def get_zerotier_nic(zerotierid):
-        for zt in containerobj.client.zerotier.list():
-            if zt['id'] == zerotierid:
-                return zt['portDeviceName']
-        else:
-            raise j.exceptions.RuntimeError("Failed to get zerotier network device")
 
     def wait_for_interface():
         start = time.time()
@@ -232,6 +282,13 @@ def setup_zerotierbridges(job):
                     return
             time.sleep(0.5)
         raise j.exceptions.RuntimeError("Could not find zerotier network interface")
+
+    def get_zerotier_nic(zerotierid):
+        for zt in containerobj.client.zerotier.list():
+            if zt['id'] == zerotierid:
+                return zt['portDeviceName']
+        else:
+            raise j.exceptions.RuntimeError("Failed to get zerotier network device")
 
     ip = containerobj.client.ip
     for nic in nics:
@@ -245,6 +302,7 @@ def setup_zerotierbridges(job):
             if token:
                 zerotier = client.Client()
                 zerotier.set_auth_header('bearer {}'.format(token))
+
                 resp = zerotier.network.getMember(container.model.data.zerotiernodeid, zerotierbridge['id'])
                 member = resp.json()
 
@@ -254,6 +312,7 @@ def setup_zerotierbridges(job):
 
             # check if configuration is already done
             linkmap = {link['name']: link for link in ip.link.list()}
+
             if linkmap[nicname]['type'] == 'bridge':
                 continue
 
