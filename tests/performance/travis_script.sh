@@ -13,7 +13,7 @@ then
     sleep 10
     
     echo "[*] Executing controller script"
-    sshpass -p ${PERF_CTRL_PASS} ssh -tA ${PERF_CTRL_UN}@${PERF_CTRL_IP} ls
+    ping -w5 {PERF_CTRL_IP}
 
     #echo "[*] Copying scripts to controller"
     #sshpass -p ${PERF_CTRL_PASS} scp -r ../performance/ ${PERF_CTRL_UN}@${PERF_CTRL_IP}:/tmp/performance_test/scripts
