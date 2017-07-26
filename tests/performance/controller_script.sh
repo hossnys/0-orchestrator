@@ -41,7 +41,7 @@ curl -H "Content-Type: application/json" -H "Authorization: Bearer ${PERF_ZT_TOK
 
 ## install orchestrator
 echo "[#] Installing orchestrator ..."
-ssh -tA root@localhost -p 2222 "export GIGDIR=~/gig; curl -sL https://raw.githubusercontent.com/zero-os/0-orchestrator/master/scripts/install-orchestrator.sh | bash -s ${TRAVIS_BRANCH} ${PERF_ZT_NT} ${PERF_ZT_TOKEN} ${ITSYOUONLINE_ORG}"
+ssh -tA root@localhost -p 2222 "export GIGDIR=~/gig; curl -sL https://raw.githubusercontent.com/zero-os/0-orchestrator/master/scripts/install-orchestrator.sh | bash -s ${BRANCH} ${PERF_ZT_NT} ${PERF_ZT_TOKEN} ${ITSYOUONLINE_ORG}"
 
 #passing jwt
 echo "Enabling JWT..." 
