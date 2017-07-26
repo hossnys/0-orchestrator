@@ -93,7 +93,7 @@ if __name__ == '__main__':
     # execute diskwiper script 
     print('[*] Executing diskwiper script ...')
     nodes_ips = [x['ipaddress'] for x in running_nodes]
-    cmd = 'export JWT={}; python3 scripts/diskwiper.py {}'.format(jwt, ' '.join(nodes_ips))
+    cmd = 'export JWT={}; python3 /tmp/performance_test/0-orchestrator/scripts/diskwiper.py {}'.format(jwt, ' '.join(nodes_ips))
     execute_command(cmd)
 
     # deploy storagecluster
@@ -116,12 +116,12 @@ if __name__ == '__main__':
 
     # execute performance script
     print('[*] Executing performance script ...')
-    cmd = 'python3 tests/bd-performance.py --orchestratorserver {} --storagecluster mycluster --vdiskCount {} --vdiskSize {} --runtime {} --vdiskType {} --resultDir .'.format(restapiserver, vdiskcount, vdisksize, runtime, vdisktype)    
+    cmd = 'python3 /tmp/performance_test/0-orchestrator/performance/bd-performance.py --orchestratorserver {} --storagecluster mycluster --vdiskCount {} --vdiskSize {} --runtime {} --vdiskType {} --resultDir .'.format(restapiserver, vdiskcount, vdisksize, runtime, vdisktype)    
     execute_command(cmd)
 
     # print test results
     print('[*] Test results ...')
-    cmd = "python3 tests/print_results.py `ls *.json`"
+    cmd = "python3 /tmp/performance_test/0-orchestrator/performance/print_results.py `ls *.json`"
     print(execute_command(cmd))
 
     # delete mycluster storagecluster
